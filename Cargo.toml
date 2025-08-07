@@ -1,0 +1,35 @@
+[package]
+name = "nmodes"
+version = "0.1.0"
+edition = "2021"
+authors = ["NMODES Team <nmodes@example.com>"]
+description = "Nonlinear Mixed Effects Differential Equation Solver for population pharmacokinetics"
+
+[dependencies]
+nalgebra = { version = "0.32", features = ["serde-serialize"] }
+ndarray = "0.15"
+csv = "1.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+thiserror = "1.0"
+anyhow = "1.0"
+log = "0.4"
+env_logger = "0.10"
+rand = "0.8"
+rand_distr = "0.4"
+approx = "0.5"
+rayon = "1.8"
+plotters = "0.3"
+
+[dev-dependencies]
+approx = "0.5"
+criterion = "0.5"
+
+[[bin]]
+name = "nmodes"
+path = "src/main.rs"
+
+[[bench]]
+name = "saem_benchmark"
+harness = false
