@@ -1,8 +1,9 @@
 use clap::{Arg, Command};
 use log::{info, warn, error};
 use std::path::PathBuf;
+use std::fs;
 use nmodes::{Dataset, CompartmentModel, ModelType, SaemEstimator, RungeKuttaSolver, SolverConfig};
-use nmodes::{EstimationConfig, EstimationMethod, FoceEstimator};
+use nmodes::{EstimationConfig, EstimationMethod, FoceEstimator, estimation, FoceResults, SaemResults};
 use nmodes::{diagnostics, output, validation};
 use anyhow::{Result, anyhow};
 
@@ -195,14 +196,16 @@ fn run_analysis(args: CliArgs) -> Result<()> {
     // Print method-specific results
     match args.estimation_method {
         EstimationMethod::Saem => {
-            if let Ok(saem_results) = results.downcast::<crate::saem::SaemResults>() {
+            let saem_results_box = results;
+            if let Ok(saem_results) = saem_results_box.downcast::<nmodes::SaemResults>() {
                 println!("Final log-likelihood: {:.3}", saem_results.final_log_likelihood);
                 println!("Objective function value: {:.3}", saem_results.objective_function_value);
                 println!("Convergence achieved: {}", saem_results.converged);
             }
         }
         EstimationMethod::Foce | EstimationMethod::FoceI => {
-            if let Ok(foce_results) = results.downcast::<crate::estimation::FoceResults>() {
+            let foce_results_box = results;
+            if let Ok(foce_results) = foce_results_box.downcast::<nmodes::FoceResults>() {
                 println!("Final log-likelihood: {:.3}", foce_results.final_log_likelihood);
                 println!("Objective function value: {:.3}", foce_results.objective_function_value);
                 println!("Convergence achieved: {}", foce_results.converged);
@@ -213,8 +216,8 @@ fn run_analysis(args: CliArgs) -> Result<()> {
     Ok(())
 }
 
-fn convert_foce_to_saem_results(foce_results: &crate::estimation::FoceResults) -> crate::saem::SaemResults {
-    let mut saem_results = crate::saem::SaemResults::new(
+fn convert_foce_to_saem_results(foce_results: &FoceResults) -> SaemResults {
+    let mut saem_results = SaemResults::new(
         foce_results.fixed_effects.len(),
         foce_results.parameter_names.clone(),
     );
@@ -233,7 +236,7 @@ fn convert_foce_to_saem_results(foce_results: &crate::estimation::FoceResults) -
 
 fn save_foce_results(
     output_dir: &std::path::Path,
-    results: &crate::estimation::FoceResults,
+    results: &FoceResults,
     diagnostics: &crate::diagnostics::DiagnosticResults,
     dataset: &Dataset,
     model: &CompartmentModel,
@@ -264,7 +267,7 @@ fn save_foce_results(
 
 fn save_foce_summary_report(
     output_dir: &std::path::Path,
-    results: &crate::estimation::FoceResults,
+    results: &FoceResults,
     diagnostics: &crate::diagnostics::DiagnosticResults,
 ) -> Result<()> {
     use std::fs;
@@ -319,7 +322,6 @@ fn save_foce_predictions_csv(
     dataset: &Dataset,
     model: &CompartmentModel,
 ) -> Result<()> {
-    use std::fs;
     
     let predictions_file = output_dir.join("foce_predictions.csv");
     let mut wtr = csv::Writer::from_path(predictions_file)?;
@@ -329,11 +331,15 @@ fn save_foce_predictions_csv(
     
     let solver = RungeKuttaSolver::new();
     let solver_config = SolverConfig::default();
-    
+    // Create a single default vector to be borrowed if an individual's eta is missing.
+    let default_eta_value = vec![0.0; results.fixed_effects.len()];
     for (&id, individual) in dataset.individuals() {
         // Get individual parameters (theta + eta)
-        let ind_eta = results.individual_parameters.get(&id)
-            .unwrap_or(&vec![0.0; results.fixed_effects.len()]);
+        // FIX: Borrow the pre-allocated default_eta_value instead of a temporary vector.
+        let ind_eta = results
+            .individual_parameters
+            .get(&id)
+            .unwrap_or(&default_eta_value);
         
         let mut ind_params = model.default_parameters();
         for i in 0..results.fixed_effects.len() {

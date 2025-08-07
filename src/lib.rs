@@ -11,3 +11,4 @@ pub use data::Dataset;
 pub use models::{CompartmentModel, ModelType};
 pub use saem::{SaemEstimator, SaemResults};
 pub use estimation::{EstimationConfig, EstimationMethod, FoceEstimator, FoceResults};
+pub use solver::{RungeKuttaSolver, SolverConfig};
