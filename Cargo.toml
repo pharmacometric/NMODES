@@ -21,6 +21,7 @@ rand_distr = "0.4"
 approx = "0.5"
 rayon = "1.8"
 plotters = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
 
 [dev-dependencies]
 approx = "0.5"

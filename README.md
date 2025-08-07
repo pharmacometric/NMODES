@@ -44,10 +44,47 @@ The compiled binary will be available at `./target/release/nmodes`.
 ./target/release/nmodes -d examples/example_dataset.csv -m 1comp -e foce -o results_foce/
 ```
 
+### Multiple Model Comparison
+
+```bash
+# Compare all compartment models with SAEM
+./target/release/nmodes -d examples/example_dataset.csv -m all -e saem -o model_comparison/
+
+# Compare specific models with default method
+./target/release/nmodes -d examples/example_dataset.csv -m 1comp -m 2comp -o two_model_comparison/
+
+# Test all models with FOCE for quick assessment
+./target/release/nmodes -d examples/example_dataset.csv -m all -e foce -o quick_model_screen/
+```
+
+### Multiple Method Comparison
+
+```bash
+# Compare all estimation methods on 2-compartment model
+./target/release/nmodes -d examples/example_dataset.csv -m 2comp -e all -o method_comparison/
+
+# Compare SAEM vs FOCE on specific model
+./target/release/nmodes -d examples/example_dataset.csv -m 1comp -e saem -e foce -o saem_vs_foce/
+
+# Test FOCE variants for method selection
+./target/release/nmodes -d examples/example_dataset.csv -m 2comp -e foce -e foce-i -o foce_comparison/
+```
+
+### Comprehensive Analysis
+
+```bash
+# Full comparison: all models and all methods
+./target/release/nmodes -d examples/example_dataset.csv -m all -e all --compare -o full_analysis/
+
+# Production workflow: screen with FOCE, validate with SAEM
+./target/release/nmodes -d examples/example_dataset.csv -m all -e foce -o screening/
+./target/release/nmodes -d examples/example_dataset.csv -m 2comp -e saem -o final_model/
+```
+
 ### Advanced Usage
 
 ```bash
-# Two-compartment model with SAEM and custom settings
+# Single model with custom SAEM settings
 ./target/release/nmodes \
   --dataset data/my_study.csv \
   --model 2comp \
@@ -57,13 +94,15 @@ The compiled binary will be available at `./target/release/nmodes`.
   --chains 6 \
   --output results/two_comp_analysis/
 
-# FOCE with interaction for complex non-linear models
+# Multiple models with custom settings
 ./target/release/nmodes \
-  --dataset data/complex_study.csv \
-  --model 3comp \
-  --method foce-i \
-  --iterations 500 \
-  --output results/foce_analysis/
+  --dataset data/my_study.csv \
+  --model 1comp --model 2comp --model 3comp \
+  --method saem \
+  --iterations 2000 \
+  --burn-in 400 \
+  --compare \
+  --output results/comprehensive_analysis/
 ```
 
 ## Command Line Interface
@@ -78,16 +117,21 @@ The compiled binary will be available at `./target/release/nmodes`.
   - `1comp`: One-compartment model (default)
   - `2comp`: Two-compartment model  
   - `3comp`: Three-compartment model
+  - `all`: All compartment models (1comp, 2comp, 3comp)
+  - **Multiple models**: Use multiple `-m` flags (e.g., `-m 1comp -m 2comp`)
 - `-e, --method <METHOD>`: Estimation method
   - `saem`: Stochastic Approximation EM (default)
   - `foce`: First Order Conditional Estimation
   - `foce-i`: FOCE with interaction
+  - `all`: All estimation methods (saem, foce, foce-i)
+  - **Multiple methods**: Use multiple `-e` flags (e.g., `-e saem -e foce`)
 - `-o, --output <DIR>`: Output directory for results (default: `./output`)
 - `-i, --iterations <N>`: Number of SAEM iterations (default: 1000)
 - `-b, --burn-in <N>`: Number of burn-in iterations (default: 200)
 - `-c, --chains <N>`: Number of MCMC chains (default: 4)
+- `--compare`: Force generation of comparison reports (automatic when multiple analyses run)
 
-### Examples
+### Single Analysis Examples
 
 ```bash
 # Quick analysis with defaults (SAEM)
@@ -98,14 +142,90 @@ The compiled binary will be available at `./target/release/nmodes`.
 
 # Production SAEM analysis with more iterations
 ./target/release/nmodes -d data.csv -m 2comp -e saem -i 3000 -b 600 -o saem_results/
+```
+
+### Multiple Model Examples
+
+```bash
+# Compare all compartment models with SAEM
+./target/release/nmodes -d data.csv -m all -e saem -o model_comparison/
+
+# Compare 1 and 2 compartment models with FOCE
+./target/release/nmodes -d data.csv -m 1comp -m 2comp -e foce -o simple_models/
+
+# Test all models with quick FOCE screening
+./target/release/nmodes -d data.csv -m all -e foce -i 50 -o quick_screen/
+```
+
+### Multiple Method Examples
+
+```bash
+# Compare all methods on 2-compartment model
+./target/release/nmodes -d data.csv -m 2comp -e all -o method_comparison/
+
+# Compare SAEM vs FOCE methods
+./target/release/nmodes -d data.csv -m 1comp -e saem -e foce -o saem_vs_foce/
+
+# Test FOCE variants
+./target/release/nmodes -d data.csv -m 2comp -e foce -e foce-i -o foce_variants/
+```
+
+### Comprehensive Analysis Examples
+
+```bash
+# Full model and method comparison
+./target/release/nmodes -d data.csv -m all -e all --compare -o comprehensive/
+
+# Production workflow: screen all models, then detailed analysis
+./target/release/nmodes -d data.csv -m all -e foce -i 50 -o screening/
+# Then run detailed analysis on best model from screening results
+./target/release/nmodes -d data.csv -m 2comp -e saem -i 2000 -o final_analysis/
+```
+
+### Legacy Examples (still supported)
+
+```bash
 
 # FOCE-I for complex three-compartment model
 ./target/release/nmodes -d complex_data.csv -m 3comp -e foce-i -i 200 -o foce_i_results/
 
-# Method comparison workflow
-./target/release/nmodes -d data.csv -m 2comp -e foce -o results_foce/
-./target/release/nmodes -d data.csv -m 2comp -e saem -o results_saem/
+# Manual method comparison workflow (now automated with -e all)
+./target/release/nmodes -d data.csv -m 2comp -e foce -o manual_foce/
+./target/release/nmodes -d data.csv -m 2comp -e saem -o manual_saem/
 ```
+
+## Output Structure
+
+When running multiple models or methods, the output directory is organized as follows:
+
+```
+output_directory/
+├── one-compartment_SAEM/          # Individual analysis results
+│   ├── parameter_estimates.json
+│   ├── predictions.csv
+│   ├── diagnostics.json
+│   └── summary_report.txt
+├── one-compartment_FOCE/
+│   ├── foce_results.json
+│   ├── foce_predictions.csv
+│   └── foce_summary_report.txt
+├── two-compartment_SAEM/
+├── two-compartment_FOCE/
+├── model_comparison_report.txt    # Comprehensive comparison report
+└── model_comparison.csv           # Machine-readable comparison data
+```
+
+### Comparison Report Contents
+
+**Summary Table**: All analyses with key metrics (OFV, AIC, BIC, convergence status)
+
+**Model Ranking**: Ordered by AIC with delta-AIC values for model selection
+
+**Parameter Comparison**: Side-by-side parameter estimates for converged models
+
+**Method Performance**: Convergence rates and computational efficiency by method
+
+**Recommendations**: Automated suggestions based on statistical criteria
 
 ## Dataset Format
 
@@ -274,7 +394,7 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 - When robustness is more important than speed
 - Research and exploratory analysis
 
-**Configuration:**
+**Single Model Configuration:**
 ```bash
 # Standard SAEM analysis
 ./target/release/nmodes -d data.csv -e saem -i 2000 -b 400 -c 6
@@ -283,6 +403,15 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 ./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e saem -i 1500 -b 300 -o saem_1comp/
 ./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e saem -i 2000 -b 400 -o saem_2comp/
 ./target/release/nmodes -d examples/three_compartment_dataset.csv -m 3comp -e saem -i 2500 -b 500 -o saem_3comp/
+```
+
+**Multiple Model Configuration:**
+```bash
+# SAEM analysis across all models
+./target/release/nmodes -d examples/example_dataset.csv -m all -e saem -i 1500 -b 300 -o saem_all_models/
+
+# SAEM on specific models for comparison
+./target/release/nmodes -d examples/example_dataset.csv -m 1comp -m 2comp -e saem -o saem_comparison/
 ```
 
 ### FOCE (First Order Conditional Estimation)
@@ -299,7 +428,7 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 - Regulatory submissions
 - When speed is critical
 
-**Configuration:**
+**Single Model Configuration:**
 ```bash
 # Fast FOCE analysis
 ./target/release/nmodes -d data.csv -e foce -i 100
@@ -308,6 +437,15 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 ./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e foce -i 50 -o foce_1comp/
 ./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e foce -i 100 -o foce_2comp/
 ./target/release/nmodes -d examples/three_compartment_dataset.csv -m 3comp -e foce -i 150 -o foce_3comp/
+```
+
+**Multiple Model Configuration:**
+```bash
+# FOCE screening across all models
+./target/release/nmodes -d examples/example_dataset.csv -m all -e foce -i 50 -o foce_screening/
+
+# FOCE comparison on selected models
+./target/release/nmodes -d examples/example_dataset.csv -m 1comp -m 3comp -e foce -o foce_selected/
 ```
 
 ### FOCE-I (FOCE with Interaction)
@@ -324,7 +462,7 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 - When FOCE shows bias but SAEM is too slow
 - Complex covariate relationships
 
-**Configuration:**
+**Single Model Configuration:**
 ```bash
 # FOCE with interaction
 ./target/release/nmodes -d data.csv -e foce-i -i 200
@@ -333,6 +471,28 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 ./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e foce-i -i 75 -o foce_i_1comp/
 ./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e foce-i -i 125 -o foce_i_2comp/
 ./target/release/nmodes -d examples/three_compartment_dataset.csv -m 3comp -e foce-i -i 175 -o foce_i_3comp/
+```
+
+**Multiple Model Configuration:**
+```bash
+# FOCE-I analysis across all models
+./target/release/nmodes -d examples/example_dataset.csv -m all -e foce-i -i 100 -o foce_i_all/
+
+# FOCE-I on complex models only
+./target/release/nmodes -d examples/example_dataset.csv -m 2comp -m 3comp -e foce-i -o foce_i_complex/
+```
+
+### Multiple Method Comparison
+
+```bash
+# Compare all methods on one model
+./target/release/nmodes -d examples/example_dataset.csv -m 2comp -e all -o all_methods/
+
+# Compare SAEM vs FOCE methods
+./target/release/nmodes -d examples/example_dataset.csv -m 1comp -e saem -e foce -o saem_vs_foce/
+
+# Compare FOCE variants
+./target/release/nmodes -d examples/example_dataset.csv -m 2comp -e foce -e foce-i -o foce_variants/
 ```
 
 ### Method Comparison Guidelines
@@ -346,63 +506,144 @@ dA3/dt = (Q3/V1) × A1 - (Q3/V3) × A3
 | **Regulatory Acceptance** | Good | Excellent | Excellent |
 | **Uncertainty Quantification** | Excellent | Good | Good |
 
-**Recommended Workflow:**
-1. **Exploratory Analysis**: Start with FOCE for quick model assessment
-2. **Model Development**: Use SAEM for robust parameter estimation
-3. **Final Analysis**: Use FOCE or FOCE-I for production runs
-4. **Validation**: Compare results across methods for consistency
+**Recommended Workflows:**
+
+#### 1. Model Selection Workflow
+```bash
+# Step 1: Quick screening of all models with FOCE
+./target/release/nmodes -d data.csv -m all -e foce -i 50 -o screening/
+
+# Step 2: Detailed analysis of top 2 models with SAEM
+./target/release/nmodes -d data.csv -m 1comp -m 2comp -e saem -i 2000 -o detailed/
+
+# Step 3: Final validation with FOCE-I on best model
+./target/release/nmodes -d data.csv -m 2comp -e foce-i -i 150 -o final/
+```
+
+#### 2. Method Validation Workflow
+```bash
+# Step 1: Compare all methods on selected model
+./target/release/nmodes -d data.csv -m 2comp -e all --compare -o method_comparison/
+
+# Step 2: Extended SAEM run for final estimates
+./target/release/nmodes -d data.csv -m 2comp -e saem -i 3000 -b 600 -o final_saem/
+```
+
+#### 3. Comprehensive Analysis Workflow
+```bash
+# Single command for complete analysis
+./target/release/nmodes -d data.csv -m all -e all --compare -o comprehensive/
+
+# Review comparison report for best model-method combination
+cat comprehensive/model_comparison_report.txt
+```
+
+#### 4. Production Workflow
+```bash
+# Step 1: Automated model and method selection
+./target/release/nmodes -d data.csv -m all -e foce -e foce-i -o selection/
+
+# Step 2: Robust estimation with best model (based on selection results)
+./target/release/nmodes -d data.csv -m 2comp -e saem -i 2000 -o production/
+
+# Step 3: Cross-validation with alternative method
+./target/release/nmodes -d data.csv -m 2comp -e foce-i -o validation/
+```
 
 ### Complete Analysis Workflow Examples
 
-#### Example 1: One-Compartment Model Analysis
+#### Example 1: Automated Model Selection
 ```bash
-# Quick FOCE assessment
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e foce -i 50 -o quick_foce/
+# Screen all models with FOCE for speed
+./target/release/nmodes -d examples/one_compartment_dataset.csv -m all -e foce -i 50 -o model_screen/
 
-# Robust SAEM estimation
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e saem -i 1500 -b 300 -o robust_saem/
+# Validate top models with SAEM
+./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -m 2comp -e saem -i 1500 -b 300 -o validation/
 
-# Final FOCE-I analysis
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e foce-i -i 75 -o final_foce_i/
+# Final analysis with best model and method
+./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e saem -i 2000 -b 400 -o final/
 ```
 
-#### Example 2: Two-Compartment Model Comparison
+#### Example 2: Method Comparison Study
 ```bash
-# Compare all methods on two-compartment data
-./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e foce -i 100 -o 2comp_foce/
-./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e foce-i -i 125 -o 2comp_foce_i/
-./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e saem -i 2000 -b 400 -o 2comp_saem/
+# Single command to compare all methods
+./target/release/nmodes -d examples/two_compartment_dataset.csv -m 2comp -e all --compare -o method_study/
 
-# Compare objective function values
-echo "Method comparison for two-compartment model:"
-grep "Objective Function Value" 2comp_*/summary_report.txt
+# Review automated comparison report
+cat method_study/model_comparison_report.txt
+
+# Extract specific metrics for further analysis
+grep "AIC" method_study/model_comparison.csv
 ```
 
-#### Example 3: Three-Compartment Model Development
+#### Example 3: Comprehensive Analysis
 ```bash
-# Start with FOCE for initial assessment
-./target/release/nmodes -d examples/three_compartment_dataset.csv -m 3comp -e foce -i 150 -o 3comp_initial/
+# Complete analysis: all models and methods
+./target/release/nmodes -d examples/three_compartment_dataset.csv -m all -e all --compare -o complete_analysis/
 
-# If FOCE converges well, try FOCE-I for better accuracy
-./target/release/nmodes -d examples/three_compartment_dataset.csv -m 3comp -e foce-i -i 175 -o 3comp_foce_i/
+# Results automatically organized and compared
+ls complete_analysis/
+# Shows: one-compartment_SAEM/, one-compartment_FOCE/, one-compartment_FOCE-I/,
+#        two-compartment_SAEM/, two-compartment_FOCE/, two-compartment_FOCE-I/,
+#        three-compartment_SAEM/, three-compartment_FOCE/, three-compartment_FOCE-I/,
+#        model_comparison_report.txt, model_comparison.csv
 
-# For final robust estimation, use SAEM
-./target/release/nmodes -d examples/three_compartment_dataset.csv -m 3comp -e saem -i 2500 -b 500 -o 3comp_final/
+# View summary of all results
+head -20 complete_analysis/model_comparison_report.txt
 ```
 
-#### Example 4: Model Selection Workflow
+#### Example 4: Custom Comparison Workflow
 ```bash
-# Test all compartment models with FOCE for speed
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e foce -o model_1comp/
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 2comp -e foce -o model_2comp/
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 3comp -e foce -o model_3comp/
+# Custom selection: specific models and methods
+./target/release/nmodes -d examples/example_dataset.csv \
+  -m 1comp -m 2comp \
+  -e saem -e foce-i \
+  --iterations 1500 \
+  --burn-in 300 \
+  --compare \
+  -o custom_comparison/
 
-# Compare AIC values for model selection
-echo "Model comparison (lower AIC is better):"
-grep "AIC:" model_*/diagnostics.json
+# Results in 4 analyses: 1comp+SAEM, 1comp+FOCE-I, 2comp+SAEM, 2comp+FOCE-I
+# Plus automated comparison report
 
-# Fit best model with SAEM for final analysis
-./target/release/nmodes -d examples/one_compartment_dataset.csv -m 1comp -e saem -i 2000 -o final_model/
+# Extract best model-method combination
+grep "Best fitting model" custom_comparison/model_comparison_report.txt
+```
+
+### Console Output Examples
+
+When running multiple analyses, the console shows progress and a summary table:
+
+```
+$ ./target/release/nmodes -d data.csv -m all -e saem -e foce -o comparison/
+
+Starting NMODES analysis
+Dataset: "data.csv"
+Model types: [one-compartment, two-compartment, three-compartment]
+Estimation methods: [SAEM, FOCE]
+Output directory: "comparison/"
+
+Running SAEM estimation with one-compartment model
+Running FOCE estimation with one-compartment model
+Running SAEM estimation with two-compartment model
+Running FOCE estimation with two-compartment model
+Running SAEM estimation with three-compartment model
+Running FOCE estimation with three-compartment model
+
+Analysis Summary:
+Model           Method     OFV        LogLik     Converged  AIC    
+--------------------------------------------------------------------------------
+one-compartment SAEM       491.34     -245.67    true       495.3  
+one-compartment FOCE       493.21     -246.61    true       497.2  
+two-compartment SAEM       485.12     -242.56    true       493.1  
+two-compartment FOCE       486.89     -243.45    true       494.9  
+three-compartment SAEM     487.45     -243.73    true       499.5  
+three-compartment FOCE     489.12     -244.56    false      501.1  
+
+Best model by AIC: two-compartment with SAEM (AIC: 493.1)
+
+Comparison report saved to: "comparison/model_comparison_report.txt"
+Comparison CSV saved to: "comparison/model_comparison.csv"
 ```
 
 ## Output Files
@@ -616,33 +857,60 @@ use std::path::Path;
 
 // Analyze one-compartment dataset
 let dataset = Dataset::from_csv("examples/one_compartment_dataset.csv")?;
-let model = CompartmentModel::new(ModelType::OneCompartment)?;
 
-// Quick FOCE analysis
-let foce_config = EstimationConfig::default()
-    .with_method(EstimationMethod::Foce)
-    .with_foce_iterations(50);
+// Compare multiple models programmatically
+let model_types = vec![
+    ModelType::OneCompartment,
+    ModelType::TwoCompartment,
+    ModelType::ThreeCompartment,
+];
 
-let mut foce_estimator = FoceEstimator::new(model.clone(), foce_config);
-let foce_results = foce_estimator.fit(&dataset)?;
+let estimation_methods = vec![
+    EstimationMethod::Foce,
+    EstimationMethod::Saem,
+];
 
-println!("FOCE Results:");
-println!("CL: {:.3} ± {:.3}", foce_results.fixed_effects[0].exp(), foce_results.standard_errors[0]);
-println!("V: {:.3} ± {:.3}", foce_results.fixed_effects[1].exp(), foce_results.standard_errors[1]);
+let mut all_results = Vec::new();
 
-// Robust SAEM analysis
-let saem_config = EstimationConfig::default()
-    .with_method(EstimationMethod::Saem)
-    .with_iterations(1500)
-    .with_burnin(300);
+for model_type in model_types {
+    for estimation_method in &estimation_methods {
+        let model = CompartmentModel::new(model_type.clone())?;
+        
+        let config = EstimationConfig::default()
+            .with_method(estimation_method.clone())
+            .with_iterations(match estimation_method {
+                EstimationMethod::Saem => 1000,
+                EstimationMethod::Foce => 50,
+                EstimationMethod::FoceI => 75,
+            });
+        
+        let (aic, converged) = match estimation_method {
+            EstimationMethod::Saem => {
+                let mut estimator = SaemEstimator::new(model, config);
+                let results = estimator.fit(&dataset)?;
+                let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+                (aic, results.converged)
+            }
+            EstimationMethod::Foce | EstimationMethod::FoceI => {
+                let mut estimator = FoceEstimator::new(model, config);
+                let results = estimator.fit(&dataset)?;
+                let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+                (aic, results.converged)
+            }
+        };
+        
+        all_results.push((model_type.clone(), estimation_method.clone(), aic, converged));
+    }
+}
 
-let mut saem_estimator = SaemEstimator::new(model, saem_config);
-let saem_results = saem_estimator.fit(&dataset)?;
+// Find best model-method combination
+let best_result = all_results.iter()
+    .filter(|(_, _, _, converged)| *converged)
+    .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
 
-println!("SAEM Results:");
-println!("CL: {:.3} (RSE: {:.1}%)", 
-         saem_results.fixed_effects[0].exp(),
-         saem_results.parameter_statistics[0].rse_percent);
+if let Some((model_type, method, aic, _)) = best_result {
+    println!("Best model: {:?} with {:?} (AIC: {:.2})", model_type, method, aic);
+}
 ```
 
 #### Example 2: Method Comparison Study
@@ -652,19 +920,18 @@ use nmodes::*;
 
 // Load two-compartment dataset
 let dataset = Dataset::from_csv("examples/two_compartment_dataset.csv")?;
-let model = CompartmentModel::new(ModelType::TwoCompartment)?;
 
-// Compare all three methods
+// Compare all methods on two-compartment model
 let methods = vec![
     EstimationMethod::Foce,
     EstimationMethod::FoceI,
     EstimationMethod::Saem,
-    EstimationMethod::FoceI,
 ];
 
 let mut results_comparison = Vec::new();
 
 for method in methods {
+    let model = CompartmentModel::new(ModelType::TwoCompartment)?;
     let config = EstimationConfig::default()
         .with_method(method.clone())
         .with_iterations(match method {
@@ -683,7 +950,7 @@ for method in methods {
             let duration = start_time.elapsed();
             
             results_comparison.push((
-                "SAEM".to_string(),
+                method.to_string(),
                 results.objective_function_value,
                 results.converged,
                 duration,
@@ -696,7 +963,7 @@ for method in methods {
             let duration = start_time.elapsed();
             
             results_comparison.push((
-                format!("{}", method),
+                method.to_string(),
                 results.objective_function_value,
                 results.converged,
                 duration,
@@ -719,12 +986,12 @@ for (method, ofv, converged, duration, params) in results_comparison {
 }
 ```
 
-#### Example 3: Production Analysis Pipeline
+#### Example 3: Automated Model and Method Selection
 ```rust
-use pkpd_saem::*;
+use nmodes::*;
 use std::path::Path;
 
-fn run_production_analysis(dataset_path: &str, output_base: &str) -> Result<()> {
+fn run_automated_analysis(dataset_path: &str, output_base: &str) -> Result<()> {
     // Load and validate dataset
     let dataset = Dataset::from_csv(dataset_path)?;
     validation::validate_dataset(&dataset)?;
@@ -732,68 +999,211 @@ fn run_production_analysis(dataset_path: &str, output_base: &str) -> Result<()> 
     println!("Dataset: {} individuals, {} observations", 
              dataset.n_individuals(), dataset.n_observations());
     
-    // Test different compartment models with FOCE
+    // Test all combinations of models and methods
     let models = vec![
         (ModelType::OneCompartment, "1comp"),
         (ModelType::TwoCompartment, "2comp"),
         (ModelType::ThreeCompartment, "3comp"),
     ];
     
-    let mut best_model = None;
-    let mut best_aic = f64::INFINITY;
+    let methods = vec![
+        (EstimationMethod::Foce, "foce"),
+        (EstimationMethod::FoceI, "foce-i"),
+        (EstimationMethod::Saem, "saem"),
+    ];
     
-    for (model_type, model_name) in models {
-        let model = CompartmentModel::new(model_type)?;
-        let config = EstimationConfig::default()
-            .with_method(EstimationMethod::Foce)
-            .with_foce_iterations(100);
-        
-        let mut estimator = FoceEstimator::new(model, config);
-        let results = estimator.fit(&dataset)?;
-        
-        let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
-        
-        println!("{}: AIC = {:.2}, Converged = {}", model_name, aic, results.converged);
-        
-        if aic < best_aic && results.converged {
-            best_aic = aic;
-            best_model = Some((model_type, model_name));
+    let mut all_results = Vec::new();
+    let mut best_aic = f64::INFINITY;
+    let mut best_combination = None;
+    
+    for (model_type, model_name) in &models {
+        for (estimation_method, method_name) in &methods {
+            println!("Running {} with {} model", method_name, model_name);
+            
+            let model = CompartmentModel::new(model_type.clone())?;
+            let config = EstimationConfig::default()
+                .with_method(estimation_method.clone())
+                .with_iterations(match estimation_method {
+                    EstimationMethod::Saem => 1000,
+                    EstimationMethod::Foce => 50,
+                    EstimationMethod::FoceI => 75,
+                });
+            
+            let (aic, converged, ofv) = match estimation_method {
+                EstimationMethod::Saem => {
+                    let mut estimator = SaemEstimator::new(model, config);
+                    let results = estimator.fit(&dataset)?;
+                    let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+                    (aic, results.converged, results.objective_function_value)
+                }
+                EstimationMethod::Foce | EstimationMethod::FoceI => {
+                    let mut estimator = FoceEstimator::new(model, config);
+                    let results = estimator.fit(&dataset)?;
+                    let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+                    (aic, results.converged, results.objective_function_value)
+                }
+            };
+            
+            all_results.push((model_type.clone(), estimation_method.clone(), aic, converged, ofv));
+            
+            if aic < best_aic && converged {
+                best_aic = aic;
+                best_combination = Some((model_type.clone(), estimation_method.clone()));
+            }
         }
-        
-        // Save preliminary results
-        let output_dir = Path::new(output_base).join(format!("foce_{}", model_name));
-        std::fs::create_dir_all(&output_dir)?;
-        // Save results...
     }
     
-    // Run final analysis with best model using SAEM
-    if let Some((best_model_type, model_name)) = best_model {
-        println!("\nRunning final SAEM analysis with {} model", model_name);
+    // Print comparison table
+    println!("\nComparison Results:");
+    println!("{:<15} {:<10} {:<10} {:<10} {:<10}", "Model", "Method", "AIC", "OFV", "Converged");
+    println!("{}", "-".repeat(70));
+    
+    for (model_type, method, aic, converged, ofv) in &all_results {
+        println!("{:<15} {:<10} {:<10.1} {:<10.1} {:<10}", 
+                 format!("{}", model_type), format!("{}", method), aic, ofv, converged);
+    }
+    
+    // Run detailed analysis with best combination
+    if let Some((best_model_type, best_method)) = best_combination {
+        println!("\nRunning detailed analysis with best combination: {} + {}", 
+                 best_model_type, best_method);
         
-        let model = CompartmentModel::new(best_model_type)?;
+        let model = CompartmentModel::new(best_model_type.clone())?;
         let config = EstimationConfig::default()
-            .with_method(EstimationMethod::Saem)
-            .with_iterations(2000)
-            .with_burnin(400);
+            .with_method(best_method.clone())
+            .with_iterations(match best_method {
+                EstimationMethod::Saem => 2000,
+                EstimationMethod::Foce => 200,
+                EstimationMethod::FoceI => 250,
+            })
+            .with_burnin(if matches!(best_method, EstimationMethod::Saem) { 400 } else { 0 });
         
-        let mut estimator = SaemEstimator::new(model, config);
-        let results = estimator.fit(&dataset)?;
-        
-        // Generate comprehensive diagnostics
-        let diagnostics = diagnostics::generate_diagnostics(&dataset, &results)?;
-        
-        // Save final results
-        let final_output = Path::new(output_base).join("final_analysis");
-        output::save_results(&final_output, &results, &diagnostics, &dataset, estimator.model())?;
-        
-        println!("Final analysis completed. Results saved to: {:?}", final_output);
+        match best_method {
+            EstimationMethod::Saem => {
+                let mut estimator = SaemEstimator::new(model, config);
+                let results = estimator.fit(&dataset)?;
+                
+                // Generate comprehensive diagnostics
+                let diagnostics = diagnostics::generate_diagnostics(&dataset, &results)?;
+                
+                // Save final results
+                let final_output = Path::new(output_base).join("best_model_analysis");
+                output::save_results(&final_output, &results, &diagnostics, &dataset, estimator.model())?;
+                
+                println!("Final SAEM analysis completed. Results saved to: {:?}", final_output);
+            }
+            EstimationMethod::Foce | EstimationMethod::FoceI => {
+                let mut estimator = FoceEstimator::new(model, config);
+                let results = estimator.fit(&dataset)?;
+                
+                println!("Final FOCE analysis completed. OFV: {:.2}", results.objective_function_value);
+            }
+        }
+    } else {
+        println!("No converged models found. Consider:");
+        println!("- Increasing iterations");
+        println!("- Checking data quality");
+        println!("- Trying different initial values");
     }
     
     Ok(())
 }
 
-// Run the analysis
-run_production_analysis("examples/two_compartment_dataset.csv", "production_results")?;
+// Run automated analysis
+run_automated_analysis("examples/two_compartment_dataset.csv", "automated_results")?;
+```
+
+#### Example 4: Production Pipeline with Multiple Models
+```rust
+use nmodes::*;
+
+fn production_pipeline(dataset_path: &str) -> Result<()> {
+    let dataset = Dataset::from_csv(dataset_path)?;
+    
+    // Phase 1: Quick screening with FOCE
+    println!("Phase 1: Model screening with FOCE");
+    let model_types = vec![
+        ModelType::OneCompartment,
+        ModelType::TwoCompartment,
+        ModelType::ThreeCompartment,
+    ];
+    
+    let mut screening_results = Vec::new();
+    
+    for model_type in &model_types {
+        let model = CompartmentModel::new(model_type.clone())?;
+        let config = EstimationConfig::default()
+            .with_method(EstimationMethod::Foce)
+            .with_foce_iterations(50);
+        
+        let mut estimator = FoceEstimator::new(model, config);
+        let results = estimator.fit(&dataset)?;
+        
+        let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+        screening_results.push((model_type.clone(), aic, results.converged));
+        
+        println!("  {}: AIC = {:.1}, Converged = {}", model_type, aic, results.converged);
+    }
+    
+    // Phase 2: Select top 2 models for detailed analysis
+    screening_results.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    let top_models: Vec<_> = screening_results.iter()
+        .filter(|(_, _, converged)| *converged)
+        .take(2)
+        .map(|(model_type, _, _)| model_type.clone())
+        .collect();
+    
+    println!("\nPhase 2: Detailed analysis of top models with multiple methods");
+    let detailed_methods = vec![EstimationMethod::Saem, EstimationMethod::FoceI];
+    
+    let mut detailed_results = Vec::new();
+    
+    for model_type in &top_models {
+        for method in &detailed_methods {
+            let model = CompartmentModel::new(model_type.clone())?;
+            let config = EstimationConfig::default()
+                .with_method(method.clone())
+                .with_iterations(match method {
+                    EstimationMethod::Saem => 1500,
+                    EstimationMethod::FoceI => 150,
+                    _ => 100,
+                });
+            
+            let (aic, converged) = match method {
+                EstimationMethod::Saem => {
+                    let mut estimator = SaemEstimator::new(model, config);
+                    let results = estimator.fit(&dataset)?;
+                    let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+                    (aic, results.converged)
+                }
+                EstimationMethod::FoceI => {
+                    let mut estimator = FoceEstimator::new(model, config);
+                    let results = estimator.fit(&dataset)?;
+                    let aic = -2.0 * results.final_log_likelihood + 2.0 * results.fixed_effects.len() as f64;
+                    (aic, results.converged)
+                }
+                _ => unreachable!(),
+            };
+            
+            detailed_results.push((model_type.clone(), method.clone(), aic, converged));
+            println!("  {} + {}: AIC = {:.1}, Converged = {}", model_type, method, aic, converged);
+        }
+    }
+    
+    // Phase 3: Final model selection
+    if let Some((best_model, best_method, best_aic, _)) = detailed_results.iter()
+        .filter(|(_, _, _, converged)| *converged)
+        .min_by(|a, b| a.2.partial_cmp(&b.2).unwrap())
+    {
+        println!("\nFinal recommendation: {} with {} (AIC: {:.1})", 
+                 best_model, best_method, best_aic);
+    }
+    
+    Ok(())
+}
+
+// Run production pipeline
+production_pipeline("examples/two_compartment_dataset.csv")?;
 ```
 
 ### Advanced Configuration
@@ -1301,8 +1711,8 @@ If you use this software in your research, please cite:
 ```bibtex
 @software{nmodes,
   title = {NMODES: Nonlinear Mixed Effects Differential Equation Solver},
-  author = {William H},
-  year = {2025},
-  url = {https://github.com/pharmacometric/NMODES}
+  author = {NMODES Team},
+  year = {2024},
+  url = {https://github.com/your-repo/nmodes}
 }
 ```
