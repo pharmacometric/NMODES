@@ -1301,8 +1301,8 @@ If you use this software in your research, please cite:
 ```bibtex
 @software{nmodes,
   title = {NMODES: Nonlinear Mixed Effects Differential Equation Solver},
-  author = {NMODES Team},
-  year = {2024},
-  url = {https://github.com/your-repo/nmodes}
+  author = {William H},
+  year = {2025},
+  url = {https://github.com/pharmacometric/NMODES}
 }
 ```
